@@ -4,7 +4,7 @@ include 'config.php';
 
 // Cek sudah login belum
 if (isset($_SESSION['username'])) {
-    $REDIRECT_URL = $_SESSION['role'] == 'kasir' ? 'admin.php' : 'kasir.php';
+    $REDIRECT_URL = $_SESSION['role'] == 'admin' ? 'admin.php' : 'kasir.php';
     header("Location: $REDIRECT_URL ");
     exit();
 }

@@ -22,12 +22,19 @@ if ($_POST) {
     } elseif ($harga_beli >= $harga_jual) {
         $error = 'Harga jual harus lebih besar dari harga beli!';
     } else {
-        try {
-            $stmt = $pdo->prepare("INSERT INTO tambah_obat (kode_obat, nama_obat, kategori, harga_beli, harga_jual, stok, satuan, produsen, tanggal_kadaluarsa) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
-            $stmt->execute([$kode_obat, $nama_obat, $kategori, $harga_beli, $harga_jual, $stok, $satuan, $produsen, $tgl_kadaluarsa]);
-            $success = "tambah_obat '$nama_obat' berhasil ditambahkan!";
-        } catch (PDOException $e) {
-            $error = 'Kode obat sudah ada atau error database!';
+        // Cek jika kode obat sudah ada
+        $stmt_check = $pdo->prepare("SELECT COUNT(*) FROM tambah_obat WHERE kode_obat = ?");
+        $stmt_check->execute([$kode_obat]);
+        if ($stmt_check->fetchColumn() > 0) {
+            $error = 'Kode obat sudah ada!';
+        } else {
+            try {
+                $stmt = $pdo->prepare("INSERT INTO tambah_obat (kode_obat, nama_obat, kategori, harga_beli, harga_jual, stok, satuan, produsen, tanggal_kadaluarsa) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)");
+                $stmt->execute([$kode_obat, $nama_obat, $kategori, $harga_beli, $harga_jual, $stok, $satuan, $produsen, $tgl_kadaluarsa]);
+                $success = "Obat '$nama_obat' berhasil ditambahkan!";
+            } catch (PDOException $e) {
+                $error = 'Error database!';
+            }
         }
     }
 }

@@ -26,6 +26,25 @@ $transaksi = $stmt->fetchAll();
 
 $total_penjualan = array_sum(array_column($transaksi, 'total_harga'));
 $total_transaksi = count($transaksi);
+
+// Data untuk chart
+$chart_labels = [];
+$chart_data = [];
+$stmt_chart = $pdo->prepare("
+    SELECT 
+        DATE(tanggal_transaksi) as tanggal,
+        SUM(total_harga) as total
+    FROM transaksi
+    WHERE tanggal_transaksi BETWEEN ? AND ?
+    GROUP BY DATE(tanggal_transaksi)
+    ORDER BY tanggal ASC
+");
+$stmt_chart->execute([$tanggal_dari, $tanggal_sampai . ' 23:59:59']);
+$chart_result = $stmt_chart->fetchAll();
+foreach ($chart_result as $row) {
+    $chart_labels[] = date('d M', strtotime($row['tanggal']));
+    $chart_data[] = $row['total'];
+}
 ?>
 
 <!DOCTYPE html>
@@ -213,10 +232,10 @@ $total_transaksi = count($transaksi);
         new Chart(ctx, {
             type: 'line',
             data: {
-                labels: ['28 Dec', '29 Dec', '30 Dec', '31 Dec'],
+                labels: <?= json_encode($chart_labels) ?>,
                 datasets: [{
                     label: 'Penjualan (Rp)',
-                    data: [47000, 85000, 5000, 65000],
+                    data: <?= json_encode($chart_data) ?>,
                     borderColor: '#9CAF88',
                     backgroundColor: 'rgba(156, 175, 136, 0.1)',
                     tension: 0.4,

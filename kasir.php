@@ -84,15 +84,45 @@ include 'config.php';
                     </a>
                 </div>
                 <div class="col-lg-4 col-md-6">
-                    <a href="#" class="btn btn-kasir text-white w-100 text-start">
+                    <button class="btn btn-kasir text-white w-100 text-start" data-bs-toggle="modal" data-bs-target="#cetakStrukModal">
                         <i class="bi bi-receipt fs-2 d-block mb-3"></i>
                         <span>Cetak Struk</span>
-                    </a>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Cetak Struk -->
+    <div class="modal fade" id="cetakStrukModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Cetak Ulang Struk</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <form onsubmit="cetakStruk(event)">
+                        <div class="mb-3">
+                            <label class="form-label">Kode Transaksi</label>
+                            <input type="text" class="form-control" id="kodeTransaksi" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Cetak</button>
+                    </form>
                 </div>
             </div>
         </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        function cetakStruk(event) {
+            event.preventDefault();
+            const kode = document.getElementById('kodeTransaksi').value;
+            if (kode) {
+                window.open(`struk.php?kode=${kode}`, '_blank');
+            }
+        }
+    </script>
 </body>
 </html>

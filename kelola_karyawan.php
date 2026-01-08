@@ -2,8 +2,29 @@
 session_start();
 require_once 'config.php';
 
-$stmt = $pdo->query("SELECT * FROM tambah_karyawan");
-$users = $stmt->fetchAll(); // 🔥 INI PENTING
+// Proses Hapus User
+if (isset($_GET['delete'])) {
+    $id = intval($_GET['delete']);
+    $stmt = $pdo->prepare("DELETE FROM tambah_karyawan WHERE id = ?");
+    $stmt->execute([$id]);
+    // Juga hapus dari tabel users jika perlu
+    // $stmt = $pdo->prepare("DELETE FROM users WHERE id = (SELECT user_id FROM tambah_karyawan WHERE id = ?)");
+    // $stmt->execute([$id]);
+    header("Location: kelola_karyawan.php");
+    exit;
+}
+
+// Proses Ubah Status
+if (isset($_GET['status'])) {
+    $id = intval($_GET['status']);
+    $stmt = $pdo->prepare("UPDATE tambah_karyawan SET status = CASE WHEN status = 'aktif' THEN 'tidak aktif' ELSE 'aktif' END WHERE id = ?");
+    $stmt->execute([$id]);
+    header("Location: kelola_karyawan.php");
+    exit;
+}
+
+$stmt = $pdo->query("SELECT tk.*, u.username FROM tambah_karyawan tk JOIN users u ON tk.user_id = u.id");
+$users = $stmt->fetchAll();
 ?>
 
 <!DOCTYPE html>
@@ -130,7 +151,6 @@ $users = $stmt->fetchAll(); // 🔥 INI PENTING
                             <th>Nama Lengkap</th>
                             <th>Username</th>
                             <th>Email</th>
-                            <th>Role</th>
                             <th>Status</th>
                             <th>Telepon</th>
                             <th>Alamat</th>
@@ -144,15 +164,9 @@ $users = $stmt->fetchAll(); // 🔥 INI PENTING
                             <td><strong>0<?= $user['id'] ?></strong></td>
                             <td><?= htmlspecialchars($user['nama_lengkap'] ?: '-') ?></td>
                             <td>
-                                <strong><?= htmlspecialchars($user['user_id']) ?></strong>
-                                
+                                <strong><?= htmlspecialchars($user['username']) ?></strong>
                             </td>
                             <td><?= htmlspecialchars($user['email'] ?: '-') ?></td>
-                            <td>
-                                <span class="badge <?= $user['role']=='admin' ? 'bg-danger' : 'bg-success' ?>">
-                                    <?= ucfirst($user['role']) ?>
-                                </span>
-                            </td>
                             <td>
                                 <span class="badge status-badge <?= $user['status']=='aktif' ? 'bg-success' : 'bg-secondary' ?>">
                                     <?= ucfirst($user['status']) ?>
@@ -162,10 +176,14 @@ $users = $stmt->fetchAll(); // 🔥 INI PENTING
                             <td><?= htmlspecialchars($user['alamat'] ?: '-') ?></td>
                             <td>
                                 <strong><?= htmlspecialchars($user['created_at']) ?></strong>
-                                
                             </td>
                             <td>
                                 <div class="btn-group" role="group">
+                                    <button class="btn btn-sm btn-outline-info" data-bs-toggle="modal" data-bs-target="#editUserModal" 
+                                            data-id="<?= $user['id'] ?>" data-nama="<?= $user['nama_lengkap'] ?>" data-username="<?= $user['username'] ?>" 
+                                            data-email="<?= $user['email'] ?>" data-telepon="<?= $user['telepon'] ?>" data-alamat="<?= $user['alamat'] ?>">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
                                     <a href="?status=<?= $user['id'] ?>" 
                                        class="btn btn-sm btn-outline-success" 
                                        onclick="return confirm('Ubah status <?= $user['username'] ?>?')">
@@ -177,14 +195,13 @@ $users = $stmt->fetchAll(); // 🔥 INI PENTING
                                        onclick="return confirm('Hapus <?= $user['username'] ?>?')">
                                         <i class="bi bi-trash"></i>
                                     </a>
-                                    
                                 </div>
                             </td>
                         </tr>
                         <?php endforeach; ?>
                         <?php if(empty($users)): ?>
                         <tr>
-                            <td colspan="7" class="text-center py-5 text-muted">
+                            <td colspan="9" class="text-center py-5 text-muted">
                                 <i class="bi bi-people fs-1 d-block mb-3"></i>
                                 Belum ada pengguna
                             </td>
@@ -251,6 +268,75 @@ $users = $stmt->fetchAll(); // 🔥 INI PENTING
         </div>
     </div>
 
+    <!-- Modal Edit User -->
+    <div class="modal fade" id="editUserModal" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-0 shadow-lg">
+                <div class="modal-header bg-info text-white">
+                    <h5 class="modal-title">
+                        <i class="bi bi-pencil-square me-2"></i>Edit Pengguna
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+                </div>
+                <form method="POST" action="update_karyawan.php">
+                    <div class="modal-body">
+                        <input type="hidden" name="id" id="edit-id">
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Nama Lengkap</label>
+                            <input type="text" class="form-control" name="nama_lengkap" id="edit-nama" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Username *</label>
+                            <input type="text" class="form-control" name="username" id="edit-username" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Email</label>
+                            <input type="email" class="form-control" name="email" id="edit-email">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Password (kosongkan jika tidak ingin diubah)</label>
+                            <input type="password" class="form-control" name="password">
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Telepon *</label>
+                            <input type="text" class="form-control" name="telepon" id="edit-telepon" required>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label fw-semibold">Alamat *</label>
+                            <input type="text" class="form-control" name="alamat" id="edit-alamat" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Batal</button>
+                        <button type="submit" class="btn btn-info">
+                            <i class="bi bi-save me-2"></i>Simpan Perubahan
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        const editUserModal = document.getElementById('editUserModal');
+        editUserModal.addEventListener('show.bs.modal', event => {
+            const button = event.relatedTarget;
+            const id = button.getAttribute('data-id');
+            const nama = button.getAttribute('data-nama');
+            const username = button.getAttribute('data-username');
+            const email = button.getAttribute('data-email');
+            const telepon = button.getAttribute('data-telepon');
+            const alamat = button.getAttribute('data-alamat');
+
+            const modalBody = editUserModal.querySelector('.modal-body');
+            modalBody.querySelector('#edit-id').value = id;
+            modalBody.querySelector('#edit-nama').value = nama;
+            modalBody.querySelector('#edit-username').value = username;
+            modalBody.querySelector('#edit-email').value = email;
+            modalBody.querySelector('#edit-telepon').value = telepon;
+            modalBody.querySelector('#edit-alamat').value = alamat;
+        });
+    </script>
 </body>
 </html>

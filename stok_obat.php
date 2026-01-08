@@ -9,22 +9,24 @@ $search = $_GET['search'] ?? '';
 $stok_min = $_GET['stok_min'] ?? 0;
 
 // Query stok obat
-$where = "1=1";
+$sql = "SELECT * FROM tambah_obat WHERE 1=1";
 $params = [];
 if ($search) {
-    $where .= " AND nama_obat LIKE ?";
+    $sql .= " AND nama_obat LIKE ?";
     $params[] = "%$search%";
 }
 if ($kategori) {
-    $where .= " AND kategori = ?";
+    $sql .= " AND kategori = ?";
     $params[] = $kategori;
 }
 if ($stok_min > 0) {
-    $where .= " AND stok <= ?";
+    $sql .= " AND stok <= ?";
     $params[] = $stok_min;
 }
+$sql .= " ORDER BY stok ASC, nama_obat ASC";
 
-$stmt = $pdo->prepare("SELECT * FROM tambah_obat WHERE $where ORDER BY stok ASC, nama_obat ASC");
+$stmt = $pdo->prepare($sql);
+$stmt->execute($params);
 $tambah_obat = $stmt->fetchAll();
 
 $low_stock = array_filter($tambah_obat, fn($o) => $o['stok'] <= 10);
@@ -182,10 +184,10 @@ $habis = array_filter($tambah_obat, fn($o) => $o['stok'] == 0);
                                     <th>Kode</th>
                                     <th>Obat</th>
                                     <th>Kategori</th>
+                                    <th>Stok</th>
+                                    <th>Satuan</th>
                                     <th>Harga Beli</th>
                                     <th>Harga Jual</th>
-                                    <th>stok</th>
-                                    <th>Satuan</th>
                                     <th>Produsen</th>
                                     <th>Tgl EXP</th>
                                     <th>Created At</th>
@@ -213,11 +215,16 @@ $habis = array_filter($tambah_obat, fn($o) => $o['stok'] == 0);
                                     </td>
                                     <td>
                                         <span class="badge <?= $stok_class ?> fs-6">
-                                            <?= $item['stok'] ?> <?= htmlspecialchars($item['satuan']) ?>
+                                            <?= $item['stok'] ?>
                                         </span>
                                     </td>
+                                    <td><?= htmlspecialchars($item['satuan']) ?></td>
+                                    <td>Rp <?= number_format($item['harga_beli'], 0, ',', '.') ?></td>
                                     <td>Rp <?= number_format($item['harga_jual'], 0, ',', '.') ?></td>
                                     <td><?= htmlspecialchars($item['produsen'] ?: '-') ?></td>
+                                    <td><?= htmlspecialchars($item['tanggal_kadaluarsa']) ?></td>
+                                    <td><?= htmlspecialchars($item['created_at']) ?></td>
+                                    <td><?= htmlspecialchars($item['updated_at']) ?></td>
                                     <td>
                                         <div class="btn-group btn-group-sm" role="group">
                                             <a href="edit_stok.php?id=<?= $item['id'] ?>" class="btn btn-outline-primary btn-stok">

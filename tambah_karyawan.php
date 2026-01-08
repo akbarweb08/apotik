@@ -25,23 +25,22 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
         $newUserId = $pdo->lastInsertId();
 
         // 2. Masukkan ke tabel tambah_karyawan (menggunakan user_id)
-        // Kolom sesuai DB: id, user_id, nama_lengkap, email, role, status, telepon, alamat
-        $sqlKaryawan = "INSERT INTO tambah_karyawan (nama_lengkap, user_id, email, role, status, telepon, alamat) 
-                        VALUES (?, ?, ?, ?, ?, ?, ?)";
+        // Kolom sesuai DB: id, user_id, nama_lengkap, email, status, telepon, alamat
+        $sqlKaryawan = "INSERT INTO tambah_karyawan (nama_lengkap, user_id, email, status, telepon, alamat) 
+                        VALUES (?, ?, ?, ?, ?, ?)";
         $stmtKaryawan = $pdo->prepare($sqlKaryawan);
         
         $stmtKaryawan->execute([
             $nama_lengkap, 
             $newUserId, 
             $email, 
-            ucfirst($role_input), // 'Admin' atau 'Kasir'
             $status, 
             $telepon, 
             $alamat
         ]);
 
         $pdo->commit();
-        header("Location: kelola_user.php?success=1");
+        header("Location: kelola_karyawan.php?success=1");
     } catch (PDOException $e) {
         $pdo->rollBack();
         die("Error: " . $e->getMessage());

@@ -1,15 +1,24 @@
 <?php
+session_start();
 include 'config.php';
 
 // Kasir only
+if (!isset($_SESSION['username']) || $_SESSION['role'] !== 'kasir') {
+    // header("Location: login.php");
+    // exit;
+}
+
+$kasir_name = $_SESSION['username'] ?? 'Kasir';
+$keranjang = $_SESSION['keranjang'] ?? [];
 
 // Proses tambah ke keranjang
 if (isset($_POST['tambah_obat'])) {
     $obat_id = intval($_POST['obat_id']);
     $qty = intval($_POST['qty']);
     
-    $obat = $pdo->prepare("SELECT * FROM obat WHERE id = ? AND stok >= ?")->execute([$obat_id, $qty]);
-    $obat = $pdo->prepare("SELECT * FROM obat WHERE id = ? AND stok >= ?")->fetch();
+    $stmt = $pdo->prepare("SELECT * FROM tambah_obat WHERE id = ? AND stok >= ?");
+    $stmt->execute([$obat_id, $qty]);
+    $obat = $stmt->fetch();
     
     if ($obat && $qty > 0) {
         if (!isset($keranjang[$obat_id])) {
@@ -18,6 +27,8 @@ if (isset($_POST['tambah_obat'])) {
         $keranjang[$obat_id]['qty'] += $qty;
         $_SESSION['keranjang'] = $keranjang;
     }
+    header("Location: transaksi.php");
+    exit;
 }
 
 // Proses hapus item
@@ -25,6 +36,8 @@ if (isset($_POST['hapus_item'])) {
     $obat_id = intval($_POST['obat_id']);
     unset($keranjang[$obat_id]);
     $_SESSION['keranjang'] = $keranjang;
+    header("Location: transaksi.php");
+    exit;
 }
 
 // Proses checkout
@@ -36,9 +49,9 @@ if (isset($_POST['checkout'])) {
     try {
         // Buat transaksi header
         $kode_transaksi = 'TRX-' . date('YmdHis');
-        $stmt = $pdo->prepare("INSERT INTO transaksi (user_id, kode_transaksi, total_item, total_harga, metode_pembayaran) VALUES (?, ?, ?, ?, ?)");
+        $stmt = $pdo->prepare("INSERT INTO transaksi (user_id, kode_transaksi, total_item, total_harga, metode_pembayaran, status) VALUES (?, ?, ?, ?, ?, 'sukses')");
         $total_item = array_sum(array_column($keranjang, 'qty'));
-        $stmt->execute([$_SESSION['user_id'], $kode_transaksi, $total_item, 0, $metode]);
+        $stmt->execute([$_SESSION['id'], $kode_transaksi, $total_item, 0, $metode]);
         $transaksi_id = $pdo->lastInsertId();
         
         // Detail transaksi & update stok
@@ -50,7 +63,7 @@ if (isset($_POST['checkout'])) {
             $stmt->execute([$transaksi_id, $id, $item['qty'], $item['data']['harga_jual'], $subtotal]);
             
             // Update stok
-            $pdo->prepare("UPDATE obat SET stok = stok - ? WHERE id = ?")->execute([$item['qty'], $id]);
+            $pdo->prepare("UPDATE tambah_obat SET stok = stok - ? WHERE id = ?")->execute([$item['qty'], $id]);
         }
         
         // Update total transaksi
@@ -114,13 +127,15 @@ if (isset($_POST['checkout'])) {
                     </h3>
                     
                     <form method="POST" class="mb-4">
+                        <input type="hidden" name="obat_id">
+                        <input type="hidden" name="qty">
                         <div class="input-group">
                             <span class="input-group-text bg-light border-success">
                                 <i class="bi bi-search text-success"></i>
                             </span>
                             <input type="text" class="form-control border-success fs-6" 
                                    id="cariObat" placeholder="Ketik nama obat... (Paracetamol, Amoxicillin)" autocomplete="off">
-                            <button class="btn btn-success" type="submit" name="cari">
+                            <button class="btn btn-success" type="submit" name="tambah_obat">
                                 <i class="bi bi-arrow-return-right"></i>
                             </button>
                         </div>
@@ -129,7 +144,7 @@ if (isset($_POST['checkout'])) {
                     <!-- Hasil Pencarian -->
                     <div id="hasilObat" class="list-group list-group-flush border rounded-3" style="max-height: 500px; overflow-y: auto;">
                         <?php
-                        $stmt = $pdo->query("SELECT * FROM obat WHERE stok > 0 ORDER BY nama_obat LIMIT 10");
+                        $stmt = $pdo->query("SELECT * FROM tambah_obat WHERE stok > 0 ORDER BY nama_obat LIMIT 10");
                         while ($obat = $stmt->fetch()):
                         ?>
                         <div class="list-group-item list-group-item-action p-3 cari-item" onclick="pilihObat(<?= $obat['id'] ?>, '<?= htmlspecialchars($obat['nama_obat']) ?>', <?= $obat['harga_jual'] ?>, <?= $obat['stok'] ?>)">

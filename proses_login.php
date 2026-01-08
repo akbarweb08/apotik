@@ -13,10 +13,10 @@ $users = $stmt->fetch();
 // PENTING: Pilih salah satu metode verifikasi di bawah (A atau B)
 
 // OPSI A: Gunakan ini jika password di database SUDAH di-hash (Enkripsi)
-// $verifikasi_password = ($users && password_verify($password, $users['password']));
+$verifikasi_password = ($users && password_verify($password, $users['password']));
 
 // OPSI B: Gunakan ini jika password di database masih POLOS (Plain Text/Manual ketik)
-$verifikasi_password = ($users && $password == $users['password']);
+// $verifikasi_password = ($users && $password == $users['password']);
 
 
 if ($verifikasi_password) {
