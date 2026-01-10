@@ -108,6 +108,7 @@ if (isset($_GET['hapus'])) {
                         <a href="index.php" class="sidebar-link"><i class="fas fa-home me-2"></i> Dashboard</a>
                         <a href="obat.php" class="sidebar-link"><i class="fas fa-pills me-2"></i> Data Obat</a>
                         <a href="karyawan.php" class="sidebar-link active"><i class="fas fa-users me-2"></i> Data Karyawan</a>
+                        <a href="laporan.php" class="sidebar-link "><i class="fas fa-users me-2"></i> Laporan</a>
                     </div>
                 </div>
             </div>

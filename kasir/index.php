@@ -51,7 +51,7 @@ $nama_kasir = $_SESSION['nama'];
                                 <i class="fas fa-history fa-4x text-secondary mb-3"></i>
                                 <h4>Riwayat Transaksi</h4>
                                 <p>Lihat daftar penjualan yang pernah dilakukan.</p>
-                                <a href="#" class="btn btn-secondary w-100">Lihat Riwayat</a>
+                                <a href="riwayat.php" class="btn btn-secondary w-100">Lihat Riwayat</a>
                             </div>
                         </div>
                     </div>
